@@ -16,61 +16,32 @@ class ImageGallery extends Component {
     page: 1,
     showModal: false,
   };
-
   componentDidUpdate(prevProps, prevState) {
-    const prevQuery = prevProps.searchQuery;
-    const nextQuery = this.props.searchQuery;
-
-    if (prevQuery !== nextQuery) {
-      this.setState({ status: "pending" });
-      ImageAPI(nextQuery)
-        .then((response) => {
-          if (response.ok) {
-            return response.json();
-          }
-          return Promise.reject(
-            new Error(`Nothing were found with ${nextQuery}`)
-          );
-        })
-        .then(({ hits }) => {
-          if (hits.length === 0) {
-            this.setState({ status: "rejected" });
-          } else {
-            const addHits = this.images(hits);
-            this.setState({
-              gallery: addHits,
-              status: "resolved",
-              page: this.state.page + 1,
-              searchQuery: nextQuery,
-            });
-          }
-        })
-        .catch((error) => {
-          this.setState({ error, status: "rejected" });
-          toast("Someting went wrong");
-        });
+    if (
+      prevProps.searchQuery !== this.props.searchQuery ||
+      prevState.page !== this.state.page
+    ) {
+      this.getItems();
     }
+    this.handleScroll();
   }
 
-  loadMore = () => {
-    const { searchQuery, page } = this.state;
-    ImageAPI(searchQuery, page)
-      .then((response) => {
-        return response.json();
-      })
-      .then(({ hits }) => {
-        const addHits = this.images(hits);
-        this.setState((prevState) => ({
-          gallery: [...prevState.gallery, ...addHits],
-          page: page + 1,
-        }));
-      })
-
-      .then(() => {
-        window.scrollTo({
-          top: document.documentElement.scrollHeight,
-          behavior: "smooth",
-        });
+  getItems = () => {
+    this.setState({ gallery: [], status: "pending" });
+    ImageAPI(this.props.searchQuery, this.state.page)
+      .then((gallery) => {
+        if (gallery.hits.length === 0) {
+          return Promise.reject(
+            new Error(`Nothing were found with ${this.props.searchQuery}`)
+          );
+        } else {
+          this.setState({
+            gallery: [...gallery.hits],
+            // gallery: [...this.state.gallery, ...gallery.hits],
+            status: "resolved",
+            searchQuery: this.props.searchQuery,
+          });
+        }
       })
       .catch((error) => {
         this.setState({ error, status: "rejected" });
@@ -78,6 +49,18 @@ class ImageGallery extends Component {
       });
   };
 
+  handleScroll = () => {
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: "smooth",
+    });
+  };
+
+  loadMore = () => {
+    this.setState({
+      page: this.state.page + 1,
+    });
+  };
   images(arr) {
     const newImgArr = [];
     arr.forEach(({ id, largeImageURL, tags }) => {
@@ -103,7 +86,6 @@ class ImageGallery extends Component {
       alt: "",
     });
   };
-
   render() {
     const { gallery, status, largeImageURL, alt, showModal } = this.state;
 
@@ -145,7 +127,6 @@ class ImageGallery extends Component {
               );
             })}
           </ul>
-
           <Button onClick={this.loadMore} />
         </div>
       );
