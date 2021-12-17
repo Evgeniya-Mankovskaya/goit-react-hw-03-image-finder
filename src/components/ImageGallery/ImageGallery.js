@@ -17,17 +17,18 @@ class ImageGallery extends Component {
     showModal: false,
   };
   componentDidUpdate(prevProps, prevState) {
-    if (
-      prevProps.searchQuery !== this.props.searchQuery ||
-      prevState.page !== this.state.page
-    ) {
+    if (prevProps.searchQuery !== this.props.searchQuery) {
+      this.setState({ gallery: [] });
+      this.getItems();
+    }
+    if (prevState.page !== this.state.page) {
       this.getItems();
     }
     this.handleScroll();
   }
 
   getItems = () => {
-    this.setState({ gallery: [], status: "pending" });
+    this.setState({ status: "pending" });
     ImageAPI(this.props.searchQuery, this.state.page)
       .then((gallery) => {
         if (gallery.hits.length === 0) {
@@ -36,8 +37,7 @@ class ImageGallery extends Component {
           );
         } else {
           this.setState({
-            gallery: [...gallery.hits],
-            // gallery: [...this.state.gallery, ...gallery.hits],
+            gallery: [...this.state.gallery, ...gallery.hits],
             status: "resolved",
             searchQuery: this.props.searchQuery,
           });
