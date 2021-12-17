@@ -18,8 +18,7 @@ class ImageGallery extends Component {
   };
   componentDidUpdate(prevProps, prevState) {
     if (prevProps.searchQuery !== this.props.searchQuery) {
-      this.setState({ gallery: [] });
-      this.getItems();
+      this.setState(() => ({ gallery: [] }), this.getItems);
     }
     if (prevState.page !== this.state.page) {
       this.getItems();
